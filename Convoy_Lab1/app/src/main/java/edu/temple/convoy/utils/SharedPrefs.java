@@ -14,10 +14,10 @@ public class SharedPrefs {
                 Context.MODE_PRIVATE);
     }
 
-    public void clear() {
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.clear();
-        editor.apply();
+    public void clearAllUserSettings() {
+        clearLoggedInUser();
+        clearSessionKey();
+        clearConvoyID();
     }
 
     // ================================================================================
@@ -35,6 +35,10 @@ public class SharedPrefs {
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
+    protected void clearLoggedInUser() {
+        setLoggedInUser(Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
     // ================================================================================
     //      SESSION KEY FOR CURRENTLY LOGGED IN USER
     // ================================================================================
@@ -48,6 +52,29 @@ public class SharedPrefs {
     public String getSessionKey() {
         return sharedPrefs.getString(Constants.API_KEY_SESSION_KEY,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    protected void clearSessionKey() {
+        setSessionKey(Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    // ================================================================================
+    //      CONVOY ID FOR CURRENTLY LOGGED IN USER
+    // ================================================================================
+
+    public void setConvoyID(String convoyID) {
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.putString(Constants.API_KEY_CONVOY_ID, convoyID);
+        editor.apply();
+    }
+
+    public String getConvoyID() {
+        return sharedPrefs.getString(Constants.API_KEY_CONVOY_ID,
+                Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    public void clearConvoyID() {
+        setConvoyID(Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
 }

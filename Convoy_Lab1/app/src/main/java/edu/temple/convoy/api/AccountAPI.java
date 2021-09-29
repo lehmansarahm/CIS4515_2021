@@ -15,17 +15,6 @@ import edu.temple.convoy.utils.Constants;
 
 public class AccountAPI extends BaseAPI {
 
-    // ================================================================================
-    //      API RESULT LISTENER
-    // ================================================================================
-
-    public interface ResultListener {
-        void onSuccess(String sessionKey);
-        void onFailure(String message);
-    }
-
-    // ================================================================================
-
     public AccountAPI(Context initialContext) {
         super(initialContext);
     }
@@ -96,8 +85,8 @@ public class AccountAPI extends BaseAPI {
      * @param resultListener
      * @return
      */
-    private Response.Listener<String> getListenerForAPI(String apiName,
-                                                              ResultListener resultListener) {
+    protected Response.Listener<String> getListenerForAPI(String apiName,
+                                                          AccountAPI.ResultListener resultListener) {
         /*
             Lambda notation ... takes the place of:
                 new Response.Listener<String>() {

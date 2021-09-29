@@ -14,11 +14,14 @@ public class Constants {
 
     public static final String API_KEY_STATUS = "status";
     public static final String API_KEY_SESSION_KEY = "session_key";
+    public static final String API_KEY_CONVOY_ID = "convoy_id";
     public static final String API_KEY_MESSAGE = "message";
 
     public static final String API_ACTION_REGISTER = "REGISTER";
     public static final String API_ACTION_LOGIN = "LOGIN";
     public static final String API_ACTION_LOGOUT = "LOGOUT";
+    public static final String API_ACTION_CREATE = "CREATE";
+    public static final String API_ACTION_END = "END";
 
     public static final String API_STATUS_SUCCESS = "SUCCESS";
     public static final String API_STATUS_ERROR = "ERROR";

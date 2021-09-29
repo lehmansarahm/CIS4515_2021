@@ -10,11 +10,25 @@ import com.android.volley.Response;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Map;
 
 import edu.temple.convoy.utils.Constants;
 
 public abstract class BaseAPI {
+
+    // ================================================================================
+    //      API RESULT LISTENER
+    // ================================================================================
+
+    public interface ResultListener {
+        void onSuccess(String sessionKey);
+        void onFailure(String message);
+    }
+
+    // ================================================================================
 
     protected Context context;
 
@@ -22,19 +36,7 @@ public abstract class BaseAPI {
         this.context = initialContext;
     }
 
-    private Response.ErrorListener getErrorListener() {
-        /*
-            Lambda notation ... takes the place of:
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-         */
-        Response.ErrorListener errorListener = error -> {
-            Log.e(Constants.LOG_TAG, "Error: " + error.getMessage());
-            Toast.makeText(context, "" + error.getMessage(), Toast.LENGTH_SHORT).show();
-        };
-        return errorListener;
-    }
+    protected abstract String getApiSuffix();
 
     protected void post(Map<String, String> params, Response.Listener<String> successListener) {
         StringRequest request = new StringRequest(Request.Method.POST,
@@ -55,6 +57,18 @@ public abstract class BaseAPI {
         requestQueue.add(request);
     }
 
-    protected abstract String getApiSuffix();
+    private Response.ErrorListener getErrorListener() {
+        /*
+            Lambda notation ... takes the place of:
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+         */
+        Response.ErrorListener errorListener = error -> {
+            Log.e(Constants.LOG_TAG, "Error: " + error.getMessage());
+            Toast.makeText(context, "" + error.getMessage(), Toast.LENGTH_SHORT).show();
+        };
+        return errorListener;
+    }
 
 }
