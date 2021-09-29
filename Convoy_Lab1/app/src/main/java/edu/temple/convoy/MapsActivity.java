@@ -27,6 +27,7 @@ import edu.temple.convoy.utils.SharedPrefs;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private static final int DEFAULT_ZOOM = 15;
+    private static final String CONVOY_PREFIX = "Current Convoy: ";
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
@@ -114,9 +115,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onSuccess(String convoyID) {
                 // update the current convoy ID in shared prefs and start the location service
+                Toast.makeText(ctx, "You have joined a convoy!", Toast.LENGTH_LONG).show();
                 Log.d(Constants.LOG_TAG, "User has created convoy: " + convoyID
                         + ", starting location tracking.");
                 (new SharedPrefs(ctx)).setConvoyID(convoyID);
+                binding.currentConvoyID.setText(CONVOY_PREFIX + convoyID);
                 locationServiceIntent = new Intent(ctx, LocationService.class);
                 startService(locationServiceIntent);
             }
@@ -141,8 +144,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onSuccess(String convoyID) {
                 // clear the current convoy ID in shared prefs and stop the location service
+                Toast.makeText(ctx, "You have left convoy: " + convoyID, Toast.LENGTH_LONG).show();
                 Log.d(Constants.LOG_TAG, "Convoy: " + convoyID
                         + " has been destroyed.  Stopping location updates.");
+                binding.currentConvoyID.setText(CONVOY_PREFIX);
                 (new SharedPrefs(ctx)).clearConvoyID();
                 stopService(locationServiceIntent);
             }
