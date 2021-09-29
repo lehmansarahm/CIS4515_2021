@@ -14,6 +14,12 @@ public class SharedPrefs {
                 Context.MODE_PRIVATE);
     }
 
+    public void clear() {
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.clear();
+        editor.apply();
+    }
+
     // ================================================================================
     //      USERNAME FOR CURRENTLY LOGGED IN USER
     // ================================================================================

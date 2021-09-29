@@ -29,5 +29,6 @@
     <string name="button_end">End</string>
     <string name="button_join">Join</string>
     <string name="button_leave">Leave</string>
+    <string name="button_logout">Logout</string>
 
 </resources>

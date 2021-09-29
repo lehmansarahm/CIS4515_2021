@@ -95,11 +95,6 @@ public class LoginActivity extends AppCompatActivity {
         SharedPrefs sp = new SharedPrefs(this);
         if (!sp.getLoggedInUser().equals(Constants.SHARED_PREFS_DEFAULT_STRING) &&
                 !sp.getSessionKey().equals(Constants.SHARED_PREFS_DEFAULT_STRING)) {
-            // start the location service
-            Intent locationIntent = new Intent(this, LocationService.class);
-            startService(locationIntent);
-
-            // redirect to the maps view
             Intent mapIntent = new Intent(this, MapsActivity.class);
             startActivity(mapIntent);
         }
