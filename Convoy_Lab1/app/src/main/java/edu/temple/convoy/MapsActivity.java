@@ -1,17 +1,13 @@
 package edu.temple.convoy;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
-import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -22,30 +18,36 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import edu.temple.convoy.api.AccountAPI;
-import edu.temple.convoy.api.BaseAPI;
 import edu.temple.convoy.api.ConvoyAPI;
 import edu.temple.convoy.databinding.ActivityMapsBinding;
-import edu.temple.convoy.fragments.LoginFragment;
 import edu.temple.convoy.services.LocationService;
 import edu.temple.convoy.utils.Constants;
 import edu.temple.convoy.utils.SharedPrefs;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
+    private static final int DEFAULT_ZOOM = 15;
+
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
+
     private Intent locationServiceIntent;
+    private BroadcastReceiver locationReceiver;
+
+    private String username;
+    private String sessionKey;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        registerLocationReceiver();
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         SharedPrefs sp = new SharedPrefs(MapsActivity.this);
-        String username = sp.getLoggedInUser();
-        String sessionKey = sp.getSessionKey();
+        username = sp.getLoggedInUser();
+        sessionKey = sp.getSessionKey();
 
         binding.buttonLogout.setOnClickListener(view -> logout(username, sessionKey));
         binding.buttonStart.setOnClickListener(view -> createNewConvoy(username, sessionKey));
@@ -84,7 +86,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Add a marker in Sydney and move the camera
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, DEFAULT_ZOOM));
+    }
+
+    private void registerLocationReceiver() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Constants.BROADCAST_LOCATION_UPDATE);
+        locationReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equals(Constants.BROADCAST_LOCATION_UPDATE)) {
+                    // parse out lat-lon and update the map
+                    LatLng newPosition = new LatLng(intent.getDoubleExtra(Constants.BROADCAST_KEY_LAT, 0.0d),
+                            intent.getDoubleExtra(Constants.BROADCAST_KEY_LON, 0.0d));
+                    mMap.clear();
+                    mMap.addMarker(new MarkerOptions().position(newPosition).title(username));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, DEFAULT_ZOOM));
+                }
+            }
+        };
+        registerReceiver(locationReceiver, filter);
     }
 
     private void createNewConvoy(String username, String sessionKey) {

@@ -14,3 +14,8 @@ Here are the steps that I followed in order to complete this lab:
    - Dedicated class to handle account-based operations (register, login, logout)
    - Dedicated class to handle convoy-based operations (create, end)
 3. Add a secondary activity using the "Google Maps" template
+   - Add floating action buttons to handle creating / ending / joining / leaving a convoy
+   - Add persistent storage for username / session key / convoy ID in shared prefs
+   - Wire up the "Create" and "End" API calls
+4. Add foreground service to handle location updates
+   - Wire up the maps activity to update the map view when location updates received

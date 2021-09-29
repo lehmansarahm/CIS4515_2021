@@ -29,4 +29,8 @@ public class Constants {
     public static final String SHARED_PREFS_NAME = "CIS4515_ConvoyApp";
     public static final String SHARED_PREFS_DEFAULT_STRING = "None";
 
+    public static final String BROADCAST_LOCATION_UPDATE = "edu.temple.convoy.broadcast.location_update";
+    public static final String BROADCAST_KEY_LAT = "latitude";
+    public static final String BROADCAST_KEY_LON = "longitude";
+
 }

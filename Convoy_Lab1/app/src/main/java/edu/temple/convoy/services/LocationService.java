@@ -86,9 +86,13 @@ public class LocationService extends Service {
     private void requestLocationUpdates() {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         listener = location -> {
-            // TODO - submit update to API
             Log.i(Constants.LOG_TAG, "USER HAS MOVED.  NEW LAT: " + location.getLatitude()
                     + " NEW LONG: " + location.getLongitude());
+            Intent intent = new Intent();
+            intent.setAction(Constants.BROADCAST_LOCATION_UPDATE);
+            intent.putExtra(Constants.BROADCAST_KEY_LAT, location.getLatitude());
+            intent.putExtra(Constants.BROADCAST_KEY_LON, location.getLongitude());
+            sendBroadcast(intent);
         };
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                 0, 10, listener);
