@@ -1,5 +1,6 @@
 package edu.temple.convoy.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,9 +13,12 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
+import edu.temple.convoy.MapsActivity;
 import edu.temple.convoy.R;
 import edu.temple.convoy.api.AccountAPI;
 import edu.temple.convoy.databinding.FragmentLoginBinding;
+import edu.temple.convoy.utils.Constants;
+import edu.temple.convoy.utils.SharedPrefs;
 
 public class LoginFragment extends Fragment {
 
@@ -40,7 +44,7 @@ public class LoginFragment extends Fragment {
                     public void onClick(View view1) {
          */
         binding.loginButton.setOnClickListener(view1 -> {
-            Log.d("LoginFragment", "Login button has been clicked.");
+            Log.d(Constants.LOG_TAG, "Login button has been clicked.");
 
             // Retrieve the username and password from the login form
             String username = String.valueOf(usernameText.getText());
@@ -55,12 +59,18 @@ public class LoginFragment extends Fragment {
             AccountAPI.ResultListener listener = new AccountAPI.ResultListener() {
                 @Override
                 public void onSuccess(String sessionKey) {
-                    Log.i("LoginFragment", "Login attempt successful! Load the map view.");
+                    SharedPrefs sp = new SharedPrefs(LoginFragment.this.getContext());
+                    sp.setLoggedInUser(username);
+                    sp.setSessionKey(sessionKey);
+
+                    Log.i(Constants.LOG_TAG, "Login attempt successful! Load the map view.");
+                    Intent intent = new Intent(LoginFragment.this.getContext(), MapsActivity.class);
+                    startActivity(intent);
                 }
 
                 @Override
                 public void onFailure(String message) {
-                    Log.e("LoginFragment", "Login attempt has failed with message: " + message);
+                    Log.e(Constants.LOG_TAG, "Login attempt has failed with message: " + message);
                     Toast.makeText(LoginFragment.this.getContext(),
                             "Login attempt has failed.  Check LogCat for message.",
                             Toast.LENGTH_LONG).show();
@@ -73,7 +83,7 @@ public class LoginFragment extends Fragment {
         });
 
         binding.registerButton.setOnClickListener(intervalView -> {
-            Log.d("LoginFragment", "Register button has been clicked.  Navigating to Registration fragment.");
+            Log.d(Constants.LOG_TAG, "Register button has been clicked.  Navigating to Registration fragment.");
             NavHostFragment.findNavController(LoginFragment.this).navigate(R.id.action_goto_register);
         });
     }

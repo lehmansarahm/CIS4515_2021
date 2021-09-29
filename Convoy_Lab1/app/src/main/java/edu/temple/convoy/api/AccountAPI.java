@@ -11,6 +11,8 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.temple.convoy.utils.Constants;
+
 public class AccountAPI extends BaseAPI {
 
     // ================================================================================
@@ -23,25 +25,6 @@ public class AccountAPI extends BaseAPI {
     }
 
     // ================================================================================
-
-    private static final String LOG_TAG = "AccountAPI";
-
-    private static final String API_KEY_ACTION = "action";
-    private static final String API_KEY_FIRSTNAME = "firstname";
-    private static final String API_KEY_LASTNAME = "lastname";
-    private static final String API_KEY_USERNAME = "username";
-    private static final String API_KEY_PASSWORD = "password";
-
-    private static final String API_KEY_STATUS = "status";
-    private static final String API_KEY_SESSION_KEY = "session_key";
-    private static final String API_KEY_MESSAGE = "message";
-
-    private static final String API_ACTION_REGISTER = "REGISTER";
-    private static final String API_ACTION_LOGIN = "LOGIN";
-    private static final String API_ACTION_LOGOUT = "LOGOUT";
-
-    private static final String API_STATUS_SUCCESS = "SUCCESS";
-    private static final String API_STATUS_ERROR = "ERROR";
 
     public AccountAPI(Context initialContext) {
         super(initialContext);
@@ -64,11 +47,11 @@ public class AccountAPI extends BaseAPI {
     public void register(String firstName, String lastName, String username, String password,
                          ResultListener resultListener) {
         Map<String, String> params = new HashMap<>();
-        params.put(API_KEY_ACTION, API_ACTION_REGISTER);
-        params.put(API_KEY_USERNAME, username);
-        params.put(API_KEY_FIRSTNAME, firstName);
-        params.put(API_KEY_LASTNAME, lastName);
-        params.put(API_KEY_PASSWORD, password);
+        params.put(Constants.API_KEY_ACTION, Constants.API_ACTION_REGISTER);
+        params.put(Constants.API_KEY_USERNAME, username);
+        params.put(Constants.API_KEY_FIRSTNAME, firstName);
+        params.put(Constants.API_KEY_LASTNAME, lastName);
+        params.put(Constants.API_KEY_PASSWORD, password);
 
         String apiName = "RegistrationAPI";
         post(params, getListenerForAPI(apiName, resultListener));
@@ -83,9 +66,9 @@ public class AccountAPI extends BaseAPI {
      */
     public void login(String username, String password, ResultListener resultListener) {
         Map<String, String> params = new HashMap<>();
-        params.put(API_KEY_ACTION, API_ACTION_LOGIN);
-        params.put(API_KEY_USERNAME, username);
-        params.put(API_KEY_PASSWORD, password);
+        params.put(Constants.API_KEY_ACTION, Constants.API_ACTION_LOGIN);
+        params.put(Constants.API_KEY_USERNAME, username);
+        params.put(Constants.API_KEY_PASSWORD, password);
 
         String apiName = "LoginAPI";
         post(params, getListenerForAPI(apiName, resultListener));
@@ -98,9 +81,9 @@ public class AccountAPI extends BaseAPI {
      */
     public void logout(String username, String sessionKey, ResultListener resultListener) {
         Map<String, String> params = new HashMap<>();
-        params.put(API_KEY_ACTION, API_ACTION_LOGOUT);
-        params.put(API_KEY_USERNAME, username);
-        params.put(API_KEY_SESSION_KEY, sessionKey);
+        params.put(Constants.API_KEY_ACTION, Constants.API_ACTION_LOGOUT);
+        params.put(Constants.API_KEY_USERNAME, username);
+        params.put(Constants.API_KEY_SESSION_KEY, sessionKey);
 
         String apiName = "LogoutAPI";
         post(params, getListenerForAPI(apiName, resultListener));
@@ -123,19 +106,19 @@ public class AccountAPI extends BaseAPI {
          */
         Response.Listener<String> listener = origResponse -> {
             try {
-                Log.d(LOG_TAG, apiName + " - Received response: " + origResponse);
+                Log.d(Constants.LOG_TAG, apiName + " - Received response: " + origResponse);
                 JSONObject response = new JSONObject(origResponse);
-                String status = response.getString(API_KEY_STATUS);
+                String status = response.getString(Constants.API_KEY_STATUS);
 
-                if (status.equals(API_STATUS_SUCCESS)) {
-                    resultListener.onSuccess(response.getString(API_KEY_SESSION_KEY));
-                } else if (status.equals(API_STATUS_ERROR)) {
-                    resultListener.onFailure(response.getString(API_KEY_MESSAGE));
+                if (status.equals(Constants.API_STATUS_SUCCESS)) {
+                    resultListener.onSuccess(response.getString(Constants.API_KEY_SESSION_KEY));
+                } else if (status.equals(Constants.API_STATUS_ERROR)) {
+                    resultListener.onFailure(response.getString(Constants.API_KEY_MESSAGE));
                 } else {
-                    Log.e(LOG_TAG, apiName + " - Unrecognized result status: " + status);
+                    Log.e(Constants.LOG_TAG, apiName + " - Unrecognized result status: " + status);
                 }
             } catch (JSONException e) {
-                Log.e(LOG_TAG, apiName + " - Unable to parse results from JSON Object");
+                Log.e(Constants.LOG_TAG, apiName + " - Unable to parse results from JSON Object");
                 e.printStackTrace();
             }
         };

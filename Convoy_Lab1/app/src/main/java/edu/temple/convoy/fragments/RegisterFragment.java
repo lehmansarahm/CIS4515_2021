@@ -1,5 +1,6 @@
 package edu.temple.convoy.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,9 +13,12 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
+import edu.temple.convoy.MapsActivity;
 import edu.temple.convoy.R;
 import edu.temple.convoy.api.AccountAPI;
 import edu.temple.convoy.databinding.FragmentRegisterBinding;
+import edu.temple.convoy.utils.Constants;
+import edu.temple.convoy.utils.SharedPrefs;
 
 public class RegisterFragment extends Fragment {
 
@@ -42,7 +46,7 @@ public class RegisterFragment extends Fragment {
                     public void onClick(View view1) {
          */
         binding.buttonSubmit.setOnClickListener(view1 -> {
-            Log.d("RegisterFragment", "Register button has been clicked.");
+            Log.d(Constants.LOG_TAG, "Register button has been clicked.");
 
             // Retrieve the information from the registration form
             String firstName = String.valueOf(firstNameText.getText());
@@ -59,14 +63,18 @@ public class RegisterFragment extends Fragment {
             AccountAPI.ResultListener listener = new AccountAPI.ResultListener() {
                 @Override
                 public void onSuccess(String sessionKey) {
-                    Log.i("RegisterFragment", "Registration attempt successful!");
-                    NavHostFragment.findNavController(RegisterFragment.this)
-                            .navigate(R.id.action_goto_login);
+                    SharedPrefs sp = new SharedPrefs(RegisterFragment.this.getContext());
+                    sp.setLoggedInUser(username);
+                    sp.setSessionKey(sessionKey);
+
+                    Log.i(Constants.LOG_TAG, "Registration attempt successful! Load the map view.");
+                    Intent intent = new Intent(RegisterFragment.this.getContext(), MapsActivity.class);
+                    startActivity(intent);
                 }
 
                 @Override
                 public void onFailure(String message) {
-                    Log.e("RegisterFragment", "Registration attempt has failed "
+                    Log.e(Constants.LOG_TAG, "Registration attempt has failed "
                             + "with message: " + message);
                     Toast.makeText(RegisterFragment.this.getContext(),
                             "Registration attempt has failed.  Check LogCat for message.",
@@ -77,6 +85,12 @@ public class RegisterFragment extends Fragment {
             // Call the API
             AccountAPI accountAPI = new AccountAPI(RegisterFragment.this.getContext());
             accountAPI.register(firstName, lastName, username, password, listener);
+        });
+
+        binding.buttonCancel.setOnClickListener(view1 -> {
+            // return the user to the login fragment
+            NavHostFragment.findNavController(RegisterFragment.this)
+                    .navigate(R.id.action_goto_login);
         });
     }
 
