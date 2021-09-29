@@ -1,0 +1,26 @@
+<resources>
+
+    <!-- PRIMARY APP SETTINGS -->
+    <string name="app_name">Convoy</string>
+    <string name="title_activity_maps">MapsActivity</string>
+    <string name="title_activity_login">LoginActivity</string>
+
+    <!-- LOGIN FRAGMENT -->
+    <string name="first_fragment_label">Convoy - Login</string>
+    <string name="prompt_login">WELCOME!  PLEASE SIGN IN.</string>
+    <string name="login_username">Username:</string>
+    <string name="login_password">Password:</string>
+    <string name="button_login">Login</string>
+    <string name="prompt_register">IF YOU ARE A NEW USER, PLEASE REGISTER.</string>
+    <string name="button_register">Register</string>
+
+    <!-- REGISTER FRAGMENT -->
+    <string name="second_fragment_label">Convoy - Register</string>
+    <string name="prompt_register_new_user">REGISTER NEW USER:</string>
+    <string name="register_firstName">First Name:</string>
+    <string name="register_lastName">Last Name:</string>
+    <string name="register_username">Username:</string>
+    <string name="register_password">Password:</string>
+    <string name="button_submit">Submit</string>
+
+</resources>
