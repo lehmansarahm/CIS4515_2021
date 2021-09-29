@@ -24,4 +24,10 @@
     <string name="button_submit">Submit</string>
     <string name="button_cancel">Cancel</string>
 
+    <!-- MAP VIEW -->
+    <string name="button_start">Start</string>
+    <string name="button_end">End</string>
+    <string name="button_join">Join</string>
+    <string name="button_leave">Leave</string>
+
 </resources>
