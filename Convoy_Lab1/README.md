@@ -7,4 +7,10 @@ The following lab was completed using:
 Here are the steps that I followed in order to complete this lab:
 1. Start a new Android Studio project with a "basic" activity template to handle the login / register functionality
    - Renamed to LoginActivity, LoginFragment, RegisterFragment, nav_login_register as appropriate
-2. Add a secondary activity using the "Google Maps" template
+   - Updated the corresponding layouts (login form, registration form) and associated buttons
+   - Tested navigation between empty fragments with LogCat print statements
+2. Added classes to handle API calls
+   - Abstract class (BaseAPI) to handle common logic such as submitting a POST request
+   - Dedicated class to handle account-based operations (register, login, logout)
+   - Dedicated class to handle convoy-based operations (create, end)
+3. Add a secondary activity using the "Google Maps" template
