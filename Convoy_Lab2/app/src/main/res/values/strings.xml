@@ -31,4 +31,8 @@
     <string name="button_leave">Leave</string>
     <string name="button_logout">Logout</string>
 
+    <!-- JOIN CONVOY DIALOG -->
+    <string name="dialog_join_convoy">Enter the ID of the convoy to join:</string>
+    <string name="dialog_convoy_id">Convoy ID</string>
+
 </resources>

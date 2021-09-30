@@ -56,6 +56,68 @@ public class ConvoyAPI extends BaseAPI {
     }
 
     /**
+     * Submits a request for the indicated user to join the indicated convoy
+     *
+     * @param username
+     * @param sessionKey
+     * @param convoyID
+     * @param listener
+     */
+    public void join(String username, String sessionKey, String convoyID, ResultListener listener) {
+        Map<String, String> params = new HashMap<>();
+        params.put(Constants.API_KEY_ACTION, Constants.API_ACTION_JOIN);
+        params.put(Constants.API_KEY_USERNAME, username);
+        params.put(Constants.API_KEY_SESSION_KEY, sessionKey);
+        params.put(Constants.API_KEY_CONVOY_ID, convoyID);
+
+        String apiName = "JoinConvoyAPI";
+        post(params, getListenerForAPI(apiName, listener));
+    }
+
+    /**
+     * Submits a request for the indicated user to leave the indicated convoy
+     *
+     * @param username
+     * @param sessionKey
+     * @param convoyID
+     * @param listener
+     */
+    public void leave(String username, String sessionKey, String convoyID, ResultListener listener) {
+        Map<String, String> params = new HashMap<>();
+        params.put(Constants.API_KEY_ACTION, Constants.API_ACTION_LEAVE);
+        params.put(Constants.API_KEY_USERNAME, username);
+        params.put(Constants.API_KEY_SESSION_KEY, sessionKey);
+        params.put(Constants.API_KEY_CONVOY_ID, convoyID);
+
+        String apiName = "LeaveConvoyAPI";
+        post(params, getListenerForAPI(apiName, listener));
+    }
+
+    /**
+     * Updates the current user's location with the backend server using the associated API
+     *
+     * @param username
+     * @param sessionKey
+     * @param convoyID
+     * @param latitude
+     * @param longitude
+     * @param listener
+     */
+    public void updateLocation(String username, String sessionKey, String convoyID,
+                               String latitude, String longitude, ResultListener listener) {
+        Map<String, String> params = new HashMap<>();
+        params.put(Constants.API_KEY_ACTION, Constants.API_ACTION_UPDATE);
+        params.put(Constants.API_KEY_USERNAME, username);
+        params.put(Constants.API_KEY_SESSION_KEY, sessionKey);
+        params.put(Constants.API_KEY_CONVOY_ID, convoyID);
+        params.put(Constants.API_KEY_LATITUDE, latitude);
+        params.put(Constants.API_KEY_LONGITUDE, longitude);
+
+        String apiName = "UpdateLocationConvoyAPI";
+        post(params, getListenerForAPI(apiName, listener));
+    }
+
+    /**
      * Generate a response listener for the provided API Name and results listener
      *
      * @param apiName

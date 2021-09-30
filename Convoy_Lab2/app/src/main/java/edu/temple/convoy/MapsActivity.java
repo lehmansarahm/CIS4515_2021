@@ -1,30 +1,39 @@
 package edu.temple.convoy;
 
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentActivity;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import edu.temple.convoy.api.AccountAPI;
 import edu.temple.convoy.api.ConvoyAPI;
 import edu.temple.convoy.databinding.ActivityMapsBinding;
+import edu.temple.convoy.fragments.JoinConvoyDialogFragment;
+import edu.temple.convoy.services.FcmService;
 import edu.temple.convoy.services.LocationService;
 import edu.temple.convoy.utils.Constants;
 import edu.temple.convoy.utils.SharedPrefs;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
+        JoinConvoyDialogFragment.JoinConvoyDialogListener {
 
     private static final int DEFAULT_ZOOM = 15;
     private static final String CONVOY_PREFIX = "Current Convoy: ";
@@ -32,37 +41,55 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
 
+    private Context ctx;
     private Intent locationServiceIntent;
     private BroadcastReceiver locationReceiver;
+    private SharedPrefs sp;
 
     private String username;
     private String sessionKey;
+    private String convoyID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        registerLocationReceiver();
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        SharedPrefs sp = new SharedPrefs(MapsActivity.this);
+        // setting a class-level property for the activity context for easier access
+        // inside nested event handlers, etc.
+        ctx = MapsActivity.this;
+
+        // register our broadcast receiver for location updates
+        registerLocationReceiver();
+
+        // grab the important info from shared prefs
+        sp = new SharedPrefs(MapsActivity.this);
         username = sp.getLoggedInUser();
         sessionKey = sp.getSessionKey();
 
-        binding.buttonLogout.setOnClickListener(view -> logout(username, sessionKey));
-        binding.buttonStart.setOnClickListener(view -> createNewConvoy(username, sessionKey));
-        binding.buttonEnd.setOnClickListener(view -> {
-            String convoyID = sp.getConvoyID();
-            endActiveConvoy(username, sessionKey, convoyID);
-        });
+        // assign the button on-click listeners
+        binding.buttonLogout.setOnClickListener(view -> logout());
+        binding.buttonStart.setOnClickListener(view -> createNewConvoy());
+        binding.buttonEnd.setOnClickListener(view -> endActiveConvoy());
+        binding.buttonLeave.setOnClickListener(view -> leaveConvoy());
 
+        // enable, disable the buttons as appropriate
+        updateStartEndButtonAvailability();
+        updateJoinLeaveButtonAvailability();
+
+        // tell the "join convoy" button to show the appropriate dialog window
         binding.buttonJoin.setOnClickListener(view -> {
-            // TODO - will be implemented later
-        });
+            // check to make sure we DON'T have an assigned convoy before we continue
+            if (sp.isStartedConvoyIdSet() || sp.isJoinedConvoyIdSet()) {
+                Toast.makeText(ctx, "You are already part of an active convoy!  Cannot join another.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
 
-        binding.buttonLeave.setOnClickListener(view -> {
-            // TODO - will be implemented later
+            DialogFragment dialog = new JoinConvoyDialogFragment();
+            dialog.show(getSupportFragmentManager(), "JoinConvoyDialogFragment");
         });
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -70,6 +97,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
+
+    // ================================================================================
+    //      EVENT HANDLERS FOR GOOGLE MAP FRAGMENT
+    // ================================================================================
 
     /**
      * Manipulates the map once available.
@@ -80,16 +111,81 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
      */
+    @SuppressLint("MissingPermission")
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, DEFAULT_ZOOM));
+        // get user's last location and plot it
+        FusedLocationProviderClient fusedLocationClient =
+                LocationServices.getFusedLocationProviderClient(this);
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, location -> {
+                    if (location != null) {
+                        LatLng newPosition = new LatLng(location.getLatitude(), location.getLongitude());
+                        mMap.addMarker(new MarkerOptions().position(newPosition).title(username));
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, DEFAULT_ZOOM));
+                    }
+                });
     }
 
+    // ================================================================================
+    //      EVENT HANDLERS FOR "JOIN DIALOG" RESPONSES
+    // ================================================================================
+
+    @Override
+    public void onDialogPositiveClick(String newConvoyID) {
+        // result listener to respond to operation success / failure
+        ConvoyAPI.ResultListener listener = new ConvoyAPI.ResultListener() {
+            @Override
+            public void onSuccess(String convoyID) {
+                Toast.makeText(ctx, "You have joined convoy: " + convoyID,
+                        Toast.LENGTH_LONG).show();
+                Log.d(Constants.LOG_TAG, "User has joined convoy: " + convoyID
+                        + ", starting location tracking.");
+
+                // update the current ConvoyID in shared prefs / enable, disable buttons
+                MapsActivity.this.convoyID = convoyID;
+                sp.setJoinedConvoyID(convoyID);
+                updateJoinLeaveButtonAvailability();
+
+                // update the ConvoyID label in the maps view
+                binding.currentConvoyID.setText(CONVOY_PREFIX + convoyID);
+
+                // start the location update service
+                locationServiceIntent = new Intent(ctx, LocationService.class);
+                startService(locationServiceIntent);
+
+                // subscribe to the convoy topic on FCM
+                FcmService.subscribeToTopic(ctx, convoyID);
+            }
+
+            @Override
+            public void onFailure(String message) {
+                // inform the user that the operation has failed
+                Log.e(Constants.LOG_TAG, "Attempt to join a convoy has failed with message: " + message);
+                Toast.makeText(ctx, "Attempt to join a convoy"
+                        + " has failed.  Check LogCat for message.", Toast.LENGTH_LONG).show();
+            }
+        };
+
+        // submit a "join convoy" API request
+        ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
+        convoyAPI.join(username, sessionKey, newConvoyID, listener);
+    }
+
+    @Override
+    public void onDialogNegativeClick() {
+        Log.d(Constants.LOG_TAG, "User cancelled out of the 'Join Convoy' dialog.");
+    }
+
+    // ================================================================================
+    //      HANDLING THE LOCATION UPDATE BROADCAST RECEIVER
+    // ================================================================================
+
+    /**
+     * Register the location update broadcast receiver with the system
+     */
     private void registerLocationReceiver() {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Constants.BROADCAST_LOCATION_UPDATE);
@@ -98,82 +194,78 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equals(Constants.BROADCAST_LOCATION_UPDATE)) {
                     // parse out lat-lon and update the map
-                    LatLng newPosition = new LatLng(intent.getDoubleExtra(Constants.BROADCAST_KEY_LAT, 0.0d),
-                            intent.getDoubleExtra(Constants.BROADCAST_KEY_LON, 0.0d));
+                    double lat = intent.getDoubleExtra(Constants.BROADCAST_KEY_LAT, 0.0d);
+                    double lon = intent.getDoubleExtra(Constants.BROADCAST_KEY_LON, 0.0d);
+
+                    // update the map
                     mMap.clear();
+                    LatLng newPosition = new LatLng(lat, lon);
                     mMap.addMarker(new MarkerOptions().position(newPosition).title(username));
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, DEFAULT_ZOOM));
+
+                    // send an "update location" API request to server
+                    sendLocationUpdate(lat, lon);
                 }
             }
         };
         registerReceiver(locationReceiver, filter);
     }
 
-    private void createNewConvoy(String username, String sessionKey) {
-        Context ctx = MapsActivity.this;
+    /**
+     * Event handler to respond to broadcast receiver by forwarding new user location
+     * to the remote API
+     *
+     * @param lat
+     * @param lon
+     */
+    private void sendLocationUpdate(double lat, double lon) {
+        // check to make sure we have an assigned convoy before we continue with loc updates
+        if (convoyID == null || convoyID.equals("")) {
+            Log.e(Constants.LOG_TAG, "Can't send location updates without an associated convoy!");
+            return;
+        }
+
+        // result listener to respond to operation success / failure
         ConvoyAPI.ResultListener listener = new ConvoyAPI.ResultListener() {
             @Override
             public void onSuccess(String convoyID) {
-                // update the current convoy ID in shared prefs and start the location service
-                Toast.makeText(ctx, "You have joined a convoy!", Toast.LENGTH_LONG).show();
-                Log.d(Constants.LOG_TAG, "User has created convoy: " + convoyID
-                        + ", starting location tracking.");
-                (new SharedPrefs(ctx)).setConvoyID(convoyID);
-                binding.currentConvoyID.setText(CONVOY_PREFIX + convoyID);
-                locationServiceIntent = new Intent(ctx, LocationService.class);
-                startService(locationServiceIntent);
+                // inform the user that the operation was successful
+                Toast.makeText(ctx, "You have updated your location with convoy: "
+                        + convoyID, Toast.LENGTH_LONG).show();
+                Log.d(Constants.LOG_TAG, "You have updated your location with convoy: "
+                        + convoyID);
             }
 
             @Override
             public void onFailure(String message) {
                 // inform the user that the operation has failed
-                Log.e(Constants.LOG_TAG, "Attempt to create a convoy has failed with message: " + message);
-                Toast.makeText(ctx, "Attempt to create a convoy"
-                        + " has failed.  Check LogCat for message.", Toast.LENGTH_LONG).show();
+                Log.e(Constants.LOG_TAG, "Attempt to update location has failed with message: "
+                        + message);
+                Toast.makeText(ctx, "Attempt to update location as failed.  "
+                        + "Check LogCat for message.", Toast.LENGTH_LONG).show();
             }
         };
 
-        // submit a "start convoy" API request
+        // submit an "update location" API request
         ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
-        convoyAPI.create(username, sessionKey, listener);
+        convoyAPI.updateLocation(username, sessionKey, convoyID,
+                String.valueOf(lat), String.valueOf(lon), listener);
     }
 
-    private void endActiveConvoy(String username, String sessionKey, String convoyID) {
-        Context ctx = MapsActivity.this;
-        ConvoyAPI.ResultListener listener = new ConvoyAPI.ResultListener() {
-            @Override
-            public void onSuccess(String convoyID) {
-                // clear the current convoy ID in shared prefs and stop the location service
-                Toast.makeText(ctx, "You have left convoy: " + convoyID, Toast.LENGTH_LONG).show();
-                Log.d(Constants.LOG_TAG, "Convoy: " + convoyID
-                        + " has been destroyed.  Stopping location updates.");
-                binding.currentConvoyID.setText(CONVOY_PREFIX);
-                (new SharedPrefs(ctx)).clearConvoyID();
-                stopService(locationServiceIntent);
-            }
+    // ================================================================================
+    //      BUTTON ON-CLICK EVENT HANDLERS
+    // ================================================================================
 
-            @Override
-            public void onFailure(String message) {
-                // inform the user that the operation has failed
-                Log.e(Constants.LOG_TAG, "Attempt to create a convoy has failed with message: " + message);
-                Toast.makeText(ctx, "Attempt to create a convoy"
-                        + " has failed.  Check LogCat for message.", Toast.LENGTH_LONG).show();
-            }
-        };
-
-        // submit an "end convoy" API request
-        ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
-        convoyAPI.end(username, sessionKey, convoyID, listener);
-    }
-
-    private void logout(String username, String sessionKey) {
-        Context ctx = MapsActivity.this;
+    /**
+     * OnClick event handler to log the current user out of the system
+     */
+    private void logout() {
         AccountAPI.ResultListener listener = new AccountAPI.ResultListener() {
             @Override
             public void onSuccess(String sessionKey) {
                 // wipe everything in shared prefs, and return to the login screen
                 Log.i(Constants.LOG_TAG, "Logout attempt successful! Returning to login screen.");
-                (new SharedPrefs(ctx)).clearAllUserSettings();
+                sp.clearAllUserSettings();
                 finish();
             }
 
@@ -191,4 +283,143 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         accountAPI.logout(username, sessionKey, listener);
     }
 
+    /**
+     * OnClick event handler to create a new convoy
+     */
+    private void createNewConvoy() {
+        // check to make sure we DON'T have an assigned convoy before we continue
+        if (sp.isStartedConvoyIdSet() || sp.isJoinedConvoyIdSet()) {
+            Toast.makeText(ctx, "You are already part of an active convoy!  Cannot join another.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // result listener to respond to operation success / failure
+        ConvoyAPI.ResultListener listener = new ConvoyAPI.ResultListener() {
+            @Override
+            public void onSuccess(String convoyID) {
+                Toast.makeText(ctx, "You have joined a convoy!", Toast.LENGTH_LONG).show();
+                Log.d(Constants.LOG_TAG, "User has created convoy: " + convoyID
+                        + ", starting location tracking.");
+
+                // update the current ConvoyID in shared prefs / enable, disable buttons
+                MapsActivity.this.convoyID = convoyID;
+                sp.setStartedConvoyID(convoyID);
+                updateStartEndButtonAvailability();
+
+                // update the ConvoyID label in the maps view
+                binding.currentConvoyID.setText(CONVOY_PREFIX + convoyID);
+
+                // start the location update service
+                locationServiceIntent = new Intent(ctx, LocationService.class);
+                startService(locationServiceIntent);
+
+                // subscribe to the convoy topic on FCM
+                FcmService.subscribeToTopic(ctx, convoyID);
+            }
+
+            @Override
+            public void onFailure(String message) {
+                // inform the user that the operation has failed
+                Log.e(Constants.LOG_TAG, "Attempt to create a convoy has failed with message: " + message);
+                Toast.makeText(ctx, "Attempt to create a convoy"
+                        + " has failed.  Check LogCat for message.", Toast.LENGTH_LONG).show();
+            }
+        };
+
+        // submit a "start convoy" API request
+        ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
+        convoyAPI.create(username, sessionKey, listener);
+    }
+
+    /**
+     * OnClick event handler to end an active convoy
+     */
+    private void endActiveConvoy() {
+        // result listener to respond to operation success / failure
+        ConvoyAPI.ResultListener listener = new ConvoyAPI.ResultListener() {
+            @Override
+            public void onSuccess(String convoyID) {
+                Toast.makeText(ctx, "You have left convoy: " + convoyID, Toast.LENGTH_LONG).show();
+                Log.d(Constants.LOG_TAG, "Convoy: " + convoyID
+                        + " has been destroyed.  Stopping location updates.");
+
+                // clear the ConvoyID from the persistent label in the maps view
+                binding.currentConvoyID.setText(CONVOY_PREFIX);
+
+                // clear the convoyID from shared prefs / enable, disable buttons
+                MapsActivity.this.convoyID = "";
+                sp.clearStartedConvoyID();
+                updateStartEndButtonAvailability();
+
+                // stop the location updates service
+                stopService(locationServiceIntent);
+            }
+
+            @Override
+            public void onFailure(String message) {
+                // inform the user that the operation has failed
+                Log.e(Constants.LOG_TAG, "Attempt to end a convoy has failed with message: " + message);
+                Toast.makeText(ctx, "Attempt to end a convoy"
+                        + " has failed.  Check LogCat for message.", Toast.LENGTH_LONG).show();
+            }
+        };
+
+        // submit an "end convoy" API request
+        ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
+        convoyAPI.end(username, sessionKey, sp.getStartedConvoyID(), listener);
+    }
+
+    /**
+     * OnClick event handler to leave a previously joined convoy
+     */
+    private void leaveConvoy() {
+        // result listener to respond to operation success / failure
+        ConvoyAPI.ResultListener listener = new ConvoyAPI.ResultListener() {
+            @Override
+            public void onSuccess(String convoyID) {
+                Toast.makeText(ctx, "You have left convoy: " + convoyID,
+                        Toast.LENGTH_LONG).show();
+                Log.d(Constants.LOG_TAG, "You have left convoy: " + convoyID
+                        + ".  Stopping location updates.");
+
+                // clear the ConvoyID from the persistent label in the maps view
+                binding.currentConvoyID.setText(CONVOY_PREFIX);
+
+                // clear the convoyID from shared prefs / enable, disable buttons
+                MapsActivity.this.convoyID = "";
+                sp.clearJoinedConvoyID();
+                updateJoinLeaveButtonAvailability();
+
+                // stop the location updates service
+                stopService(locationServiceIntent);
+            }
+
+            @Override
+            public void onFailure(String message) {
+                // inform the user that the operation has failed
+                Log.e(Constants.LOG_TAG, "Attempt to leave the convoy has failed with message: " + message);
+                Toast.makeText(ctx, "Attempt to leave the convoy"
+                        + " has failed.  Check LogCat for message.", Toast.LENGTH_LONG).show();
+            }
+        };
+
+        // submit a "leave convoy" API request
+        ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
+        convoyAPI.leave(username, sessionKey, sp.getJoinedConvoyID(), listener);
+    }
+
+    // ================================================================================
+    //      UPDATE ENABLED STATE OF BUTTONS BASED ON CONVOY STATUS
+    // ================================================================================
+
+    private void updateStartEndButtonAvailability() {
+        binding.buttonStart.setEnabled(!sp.isStartedConvoyIdSet());
+        binding.buttonEnd.setEnabled(sp.isStartedConvoyIdSet());
+    }
+
+    private void updateJoinLeaveButtonAvailability() {
+        binding.buttonJoin.setEnabled(!sp.isJoinedConvoyIdSet());
+        binding.buttonLeave.setEnabled(sp.isJoinedConvoyIdSet());
+    }
 }

@@ -17,7 +17,9 @@ public class SharedPrefs {
     public void clearAllUserSettings() {
         clearLoggedInUser();
         clearSessionKey();
-        clearConvoyID();
+        clearStartedConvoyID();
+        clearJoinedConvoyID();
+        clearFcmToken();
     }
 
     // ================================================================================
@@ -26,12 +28,12 @@ public class SharedPrefs {
 
     public void setLoggedInUser(String username) {
         SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(Constants.API_KEY_USERNAME, username);
+        editor.putString(Constants.SHARED_PREFS_USERNAME, username);
         editor.apply();
     }
 
     public String getLoggedInUser() {
-        return sharedPrefs.getString(Constants.API_KEY_USERNAME,
+        return sharedPrefs.getString(Constants.SHARED_PREFS_USERNAME,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
@@ -45,12 +47,12 @@ public class SharedPrefs {
 
     public void setSessionKey(String sessionKey) {
         SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(Constants.API_KEY_SESSION_KEY, sessionKey);
+        editor.putString(Constants.SHARED_PREFS_SESSION_KEY, sessionKey);
         editor.apply();
     }
 
     public String getSessionKey() {
-        return sharedPrefs.getString(Constants.API_KEY_SESSION_KEY,
+        return sharedPrefs.getString(Constants.SHARED_PREFS_SESSION_KEY,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
@@ -59,22 +61,68 @@ public class SharedPrefs {
     }
 
     // ================================================================================
-    //      CONVOY ID FOR CURRENTLY LOGGED IN USER
+    //      ID FOR CONVOY STARTED BY CURRENTLY LOGGED IN USER
     // ================================================================================
 
-    public void setConvoyID(String convoyID) {
+    public void setStartedConvoyID(String convoyID) {
         SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(Constants.API_KEY_CONVOY_ID, convoyID);
+        editor.putString(Constants.SHARED_PREFS_STARTED_CONVOY_ID, convoyID);
         editor.apply();
     }
 
-    public String getConvoyID() {
-        return sharedPrefs.getString(Constants.API_KEY_CONVOY_ID,
+    public String getStartedConvoyID() {
+        return sharedPrefs.getString(Constants.SHARED_PREFS_STARTED_CONVOY_ID,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
-    public void clearConvoyID() {
-        setConvoyID(Constants.SHARED_PREFS_DEFAULT_STRING);
+    public boolean isStartedConvoyIdSet() {
+        return (!getStartedConvoyID().equals(Constants.SHARED_PREFS_DEFAULT_STRING));
+    }
+
+    public void clearStartedConvoyID() {
+        setStartedConvoyID(Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    // ================================================================================
+    //      ID FOR CONVOY STARTED BY CURRENTLY LOGGED IN USER
+    // ================================================================================
+
+    public void setJoinedConvoyID(String convoyID) {
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.putString(Constants.SHARED_PREFS_JOINED_CONVOY_ID, convoyID);
+        editor.apply();
+    }
+
+    public String getJoinedConvoyID() {
+        return sharedPrefs.getString(Constants.SHARED_PREFS_JOINED_CONVOY_ID,
+                Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    public boolean isJoinedConvoyIdSet() {
+        return (!getJoinedConvoyID().equals(Constants.SHARED_PREFS_DEFAULT_STRING));
+    }
+
+    public void clearJoinedConvoyID() {
+        setStartedConvoyID(Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    // ================================================================================
+    //      FIREBASE MESSAGING TOKEN FOR CURRENTLY LOGGED IN USER
+    // ================================================================================
+
+    public void setFcmToken(String sessionKey) {
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.putString(Constants.SHARED_PREFS_FCM_TOKEN, sessionKey);
+        editor.apply();
+    }
+
+    public String getFcmToken() {
+        return sharedPrefs.getString(Constants.SHARED_PREFS_FCM_TOKEN,
+                Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    protected void clearFcmToken() {
+        setFcmToken(Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
 }
