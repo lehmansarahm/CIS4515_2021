@@ -29,8 +29,7 @@ public class FcmService extends FirebaseMessagingService {
     @Override
     public void onNewToken(String token) {
         Log.i(Constants.LOG_TAG, "Received new FCM token: " + token);
-        SharedPrefs sp = new SharedPrefs(this);
-        sp.setFcmToken(token);
+        SharedPrefs.setFcmToken(this, token);
     }
 
     public static void subscribeToTopic(Context context, String topicLabel) {
@@ -42,6 +41,7 @@ public class FcmService extends FirebaseMessagingService {
                             : "Failed to subscribe to FCM topic for convoy: ";
                     message += topicLabel;
                     Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                    Log.d(Constants.LOG_TAG, message);
                 });
     }
 

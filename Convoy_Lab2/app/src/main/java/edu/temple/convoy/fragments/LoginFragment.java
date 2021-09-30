@@ -1,5 +1,6 @@
 package edu.temple.convoy.fragments;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -59,9 +60,9 @@ public class LoginFragment extends Fragment {
             AccountAPI.ResultListener listener = new AccountAPI.ResultListener() {
                 @Override
                 public void onSuccess(String sessionKey) {
-                    SharedPrefs sp = new SharedPrefs(LoginFragment.this.getContext());
-                    sp.setLoggedInUser(username);
-                    sp.setSessionKey(sessionKey);
+                    Context ctx = LoginFragment.this.getContext();
+                    SharedPrefs.setLoggedInUser(ctx, username);
+                    SharedPrefs.setSessionKey(ctx, sessionKey);
 
                     Log.i(Constants.LOG_TAG, "Login attempt successful! Load the map view.");
                     Intent intent = new Intent(LoginFragment.this.getContext(), MapsActivity.class);

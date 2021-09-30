@@ -44,7 +44,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Context ctx;
     private Intent locationServiceIntent;
     private BroadcastReceiver locationReceiver;
-    private SharedPrefs sp;
 
     private String username;
     private String sessionKey;
@@ -65,9 +64,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         registerLocationReceiver();
 
         // grab the important info from shared prefs
-        sp = new SharedPrefs(MapsActivity.this);
-        username = sp.getLoggedInUser();
-        sessionKey = sp.getSessionKey();
+        username = SharedPrefs.getLoggedInUser(ctx);
+        sessionKey = SharedPrefs.getSessionKey(ctx);
 
         // assign the button on-click listeners
         binding.buttonLogout.setOnClickListener(view -> logout());
@@ -76,13 +74,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         binding.buttonLeave.setOnClickListener(view -> leaveConvoy());
 
         // enable, disable the buttons as appropriate
-        updateStartEndButtonAvailability();
-        updateJoinLeaveButtonAvailability();
+        updateStartEndButtonAvailability(SharedPrefs.isStartedConvoyIdSet(ctx));
+        updateJoinLeaveButtonAvailability(SharedPrefs.isJoinedConvoyIdSet(ctx));
 
         // tell the "join convoy" button to show the appropriate dialog window
         binding.buttonJoin.setOnClickListener(view -> {
             // check to make sure we DON'T have an assigned convoy before we continue
-            if (sp.isStartedConvoyIdSet() || sp.isJoinedConvoyIdSet()) {
+            if (SharedPrefs.isStartedConvoyIdSet(ctx) || SharedPrefs.isJoinedConvoyIdSet(ctx)) {
                 Toast.makeText(ctx, "You are already part of an active convoy!  Cannot join another.",
                         Toast.LENGTH_LONG).show();
                 return;
@@ -146,8 +144,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 // update the current ConvoyID in shared prefs / enable, disable buttons
                 MapsActivity.this.convoyID = convoyID;
-                sp.setJoinedConvoyID(convoyID);
-                updateJoinLeaveButtonAvailability();
+                SharedPrefs.setJoinedConvoyID(ctx, convoyID);
+                updateJoinLeaveButtonAvailability(true);
 
                 // update the ConvoyID label in the maps view
                 binding.currentConvoyID.setText(CONVOY_PREFIX + convoyID);
@@ -265,7 +263,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onSuccess(String sessionKey) {
                 // wipe everything in shared prefs, and return to the login screen
                 Log.i(Constants.LOG_TAG, "Logout attempt successful! Returning to login screen.");
-                sp.clearAllUserSettings();
+                SharedPrefs.clearAllUserSettings(ctx);
                 finish();
             }
 
@@ -288,7 +286,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     private void createNewConvoy() {
         // check to make sure we DON'T have an assigned convoy before we continue
-        if (sp.isStartedConvoyIdSet() || sp.isJoinedConvoyIdSet()) {
+        if (SharedPrefs.isStartedConvoyIdSet(ctx) || SharedPrefs.isJoinedConvoyIdSet(ctx)) {
             Toast.makeText(ctx, "You are already part of an active convoy!  Cannot join another.",
                     Toast.LENGTH_LONG).show();
             return;
@@ -304,8 +302,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 // update the current ConvoyID in shared prefs / enable, disable buttons
                 MapsActivity.this.convoyID = convoyID;
-                sp.setStartedConvoyID(convoyID);
-                updateStartEndButtonAvailability();
+                SharedPrefs.setStartedConvoyID(ctx, convoyID);
+                updateStartEndButtonAvailability(true);
 
                 // update the ConvoyID label in the maps view
                 binding.currentConvoyID.setText(CONVOY_PREFIX + convoyID);
@@ -349,8 +347,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 // clear the convoyID from shared prefs / enable, disable buttons
                 MapsActivity.this.convoyID = "";
-                sp.clearStartedConvoyID();
-                updateStartEndButtonAvailability();
+                SharedPrefs.clearStartedConvoyID(ctx);
+                updateStartEndButtonAvailability(false);
 
                 // stop the location updates service
                 stopService(locationServiceIntent);
@@ -367,7 +365,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // submit an "end convoy" API request
         ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
-        convoyAPI.end(username, sessionKey, sp.getStartedConvoyID(), listener);
+        convoyAPI.end(username, sessionKey, SharedPrefs.getStartedConvoyID(ctx), listener);
     }
 
     /**
@@ -388,11 +386,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 // clear the convoyID from shared prefs / enable, disable buttons
                 MapsActivity.this.convoyID = "";
-                sp.clearJoinedConvoyID();
-                updateJoinLeaveButtonAvailability();
+                SharedPrefs.clearJoinedConvoyID(ctx);
+                updateJoinLeaveButtonAvailability(false);
 
                 // stop the location updates service
-                stopService(locationServiceIntent);
+                if (locationServiceIntent != null) stopService(locationServiceIntent);
             }
 
             @Override
@@ -406,20 +404,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // submit a "leave convoy" API request
         ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
-        convoyAPI.leave(username, sessionKey, sp.getJoinedConvoyID(), listener);
+        convoyAPI.leave(username, sessionKey, SharedPrefs.getJoinedConvoyID(ctx), listener);
     }
 
     // ================================================================================
     //      UPDATE ENABLED STATE OF BUTTONS BASED ON CONVOY STATUS
     // ================================================================================
 
-    private void updateStartEndButtonAvailability() {
-        binding.buttonStart.setEnabled(!sp.isStartedConvoyIdSet());
-        binding.buttonEnd.setEnabled(sp.isStartedConvoyIdSet());
+    private void updateStartEndButtonAvailability(boolean isConvoyStarted) {
+        binding.buttonStart.setEnabled(!isConvoyStarted);
+        binding.buttonEnd.setEnabled(isConvoyStarted);
     }
 
-    private void updateJoinLeaveButtonAvailability() {
-        binding.buttonJoin.setEnabled(!sp.isJoinedConvoyIdSet());
-        binding.buttonLeave.setEnabled(sp.isJoinedConvoyIdSet());
+    private void updateJoinLeaveButtonAvailability(boolean isConvoyJoined) {
+        binding.buttonJoin.setEnabled(!isConvoyJoined);
+        binding.buttonLeave.setEnabled(isConvoyJoined);
     }
 }

@@ -1,5 +1,6 @@
 package edu.temple.convoy.fragments;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -63,9 +64,9 @@ public class RegisterFragment extends Fragment {
             AccountAPI.ResultListener listener = new AccountAPI.ResultListener() {
                 @Override
                 public void onSuccess(String sessionKey) {
-                    SharedPrefs sp = new SharedPrefs(RegisterFragment.this.getContext());
-                    sp.setLoggedInUser(username);
-                    sp.setSessionKey(sessionKey);
+                    Context ctx = RegisterFragment.this.getContext();
+                    SharedPrefs.setLoggedInUser(ctx, username);
+                    SharedPrefs.setSessionKey(ctx, sessionKey);
 
                     Log.i(Constants.LOG_TAG, "Registration attempt successful! Load the map view.");
                     Intent intent = new Intent(RegisterFragment.this.getContext(), MapsActivity.class);

@@ -2,7 +2,8 @@
 
 The following lab was completed using:
 - Android Studio "Arctic Fox", v2021.3.1, Patch 2
-- Pixel 2 emulator (API 28, 11GB of allotted disk size)
+- Pixel 2 emulator (API 28)
+- Pixel 3a XML emulator (API 29)
 
 Here are the steps that I followed in order to complete this lab:
 1. Ported Lab 1 code base (https://github.com/lehmansarahm/CIS4515_2021/tree/main/Convoy_Lab1)

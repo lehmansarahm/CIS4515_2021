@@ -92,9 +92,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void redirectIfLoggedIn() {
-        SharedPrefs sp = new SharedPrefs(this);
-        if (!sp.getLoggedInUser().equals(Constants.SHARED_PREFS_DEFAULT_STRING) &&
-                !sp.getSessionKey().equals(Constants.SHARED_PREFS_DEFAULT_STRING)) {
+        if (SharedPrefs.isLoggedInUserSet(this) && SharedPrefs.isSessionKeySet(this)) {
             Intent mapIntent = new Intent(this, MapsActivity.class);
             startActivity(mapIntent);
         }

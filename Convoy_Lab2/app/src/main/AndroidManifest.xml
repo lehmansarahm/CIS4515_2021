@@ -22,7 +22,6 @@
         <activity
             android:name=".LoginActivity"
             android:exported="true"
-            android:label="@string/title_activity_login"
             android:theme="@style/Theme.Convoy_Lab1.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,8 +31,7 @@
 
         <activity
             android:name=".MapsActivity"
-            android:exported="true"
-            android:label="@string/title_activity_maps" />
+            android:exported="true" />
 
         <service
             android:name=".services.LocationService"

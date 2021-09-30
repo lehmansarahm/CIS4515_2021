@@ -1,128 +1,134 @@
 package edu.temple.convoy.utils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
 public class SharedPrefs {
 
-    private Context context;
-    private SharedPreferences sharedPrefs;
-
-    public SharedPrefs(Context initialContext) {
-        context = initialContext;
-        sharedPrefs = context.getSharedPreferences(Constants.SHARED_PREFS_NAME,
-                Context.MODE_PRIVATE);
-    }
-
-    public void clearAllUserSettings() {
-        clearLoggedInUser();
-        clearSessionKey();
-        clearStartedConvoyID();
-        clearJoinedConvoyID();
-        clearFcmToken();
+    public static void clearAllUserSettings(Context ctx) {
+        clearLoggedInUser(ctx);
+        clearSessionKey(ctx);
+        clearStartedConvoyID(ctx);
+        clearJoinedConvoyID(ctx);
+        clearFcmToken(ctx);
     }
 
     // ================================================================================
     //      USERNAME FOR CURRENTLY LOGGED IN USER
     // ================================================================================
 
-    public void setLoggedInUser(String username) {
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(Constants.SHARED_PREFS_USERNAME, username);
-        editor.apply();
+    public static void setLoggedInUser(Context ctx, String username) {
+        setSharedPrefsString(ctx, Constants.SHARED_PREFS_USERNAME, username);
     }
 
-    public String getLoggedInUser() {
-        return sharedPrefs.getString(Constants.SHARED_PREFS_USERNAME,
+    public static String getLoggedInUser(Context ctx) {
+        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_USERNAME,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
-    protected void clearLoggedInUser() {
-        setLoggedInUser(Constants.SHARED_PREFS_DEFAULT_STRING);
+    public static boolean isLoggedInUserSet(Context ctx) {
+        return (!getLoggedInUser(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
+    }
+
+    protected static void clearLoggedInUser(Context ctx) {
+        setLoggedInUser(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
     // ================================================================================
     //      SESSION KEY FOR CURRENTLY LOGGED IN USER
     // ================================================================================
 
-    public void setSessionKey(String sessionKey) {
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(Constants.SHARED_PREFS_SESSION_KEY, sessionKey);
-        editor.apply();
+    public static void setSessionKey(Context ctx, String sessionKey) {
+        setSharedPrefsString(ctx, Constants.SHARED_PREFS_SESSION_KEY, sessionKey);
     }
 
-    public String getSessionKey() {
-        return sharedPrefs.getString(Constants.SHARED_PREFS_SESSION_KEY,
+    public static String getSessionKey(Context ctx) {
+        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_SESSION_KEY,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
-    protected void clearSessionKey() {
-        setSessionKey(Constants.SHARED_PREFS_DEFAULT_STRING);
+    public static boolean isSessionKeySet(Context ctx) {
+        return (!getSessionKey(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
+    }
+
+    protected static void clearSessionKey(Context ctx) {
+        setSessionKey(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
     // ================================================================================
     //      ID FOR CONVOY STARTED BY CURRENTLY LOGGED IN USER
     // ================================================================================
 
-    public void setStartedConvoyID(String convoyID) {
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(Constants.SHARED_PREFS_STARTED_CONVOY_ID, convoyID);
-        editor.apply();
+    public static void setStartedConvoyID(Context ctx, String convoyID) {
+        setSharedPrefsString(ctx, Constants.SHARED_PREFS_STARTED_CONVOY_ID, convoyID);
     }
 
-    public String getStartedConvoyID() {
-        return sharedPrefs.getString(Constants.SHARED_PREFS_STARTED_CONVOY_ID,
+    public static String getStartedConvoyID(Context ctx) {
+        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_STARTED_CONVOY_ID,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
-    public boolean isStartedConvoyIdSet() {
-        return (!getStartedConvoyID().equals(Constants.SHARED_PREFS_DEFAULT_STRING));
+    public static boolean isStartedConvoyIdSet(Context ctx) {
+        return (!getStartedConvoyID(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
     }
 
-    public void clearStartedConvoyID() {
-        setStartedConvoyID(Constants.SHARED_PREFS_DEFAULT_STRING);
+    public static void clearStartedConvoyID(Context ctx) {
+        setStartedConvoyID(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
     // ================================================================================
     //      ID FOR CONVOY STARTED BY CURRENTLY LOGGED IN USER
     // ================================================================================
 
-    public void setJoinedConvoyID(String convoyID) {
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(Constants.SHARED_PREFS_JOINED_CONVOY_ID, convoyID);
-        editor.apply();
+    public static void setJoinedConvoyID(Context ctx, String convoyID) {
+        setSharedPrefsString(ctx, Constants.SHARED_PREFS_JOINED_CONVOY_ID, convoyID);
     }
 
-    public String getJoinedConvoyID() {
-        return sharedPrefs.getString(Constants.SHARED_PREFS_JOINED_CONVOY_ID,
+    public static String getJoinedConvoyID(Context ctx) {
+        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_JOINED_CONVOY_ID,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
-    public boolean isJoinedConvoyIdSet() {
-        return (!getJoinedConvoyID().equals(Constants.SHARED_PREFS_DEFAULT_STRING));
+    public static boolean isJoinedConvoyIdSet(Context ctx) {
+        return (!getJoinedConvoyID(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
     }
 
-    public void clearJoinedConvoyID() {
-        setStartedConvoyID(Constants.SHARED_PREFS_DEFAULT_STRING);
+    public static void clearJoinedConvoyID(Context ctx) {
+        setStartedConvoyID(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
     // ================================================================================
     //      FIREBASE MESSAGING TOKEN FOR CURRENTLY LOGGED IN USER
     // ================================================================================
 
-    public void setFcmToken(String sessionKey) {
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putString(Constants.SHARED_PREFS_FCM_TOKEN, sessionKey);
-        editor.apply();
+    public static void setFcmToken(Context ctx, String sessionKey) {
+        setSharedPrefsString(ctx, Constants.SHARED_PREFS_FCM_TOKEN, sessionKey);
     }
 
-    public String getFcmToken() {
-        return sharedPrefs.getString(Constants.SHARED_PREFS_FCM_TOKEN,
+    public static String getFcmToken(Context ctx) {
+        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_FCM_TOKEN,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
-    protected void clearFcmToken() {
-        setFcmToken(Constants.SHARED_PREFS_DEFAULT_STRING);
+    protected static void clearFcmToken(Context ctx) {
+        setFcmToken(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    // ================================================================================
+    //      PRIVATE UTILITY METHODS
+    // ================================================================================
+
+    private static void setSharedPrefsString(Context ctx, String key, String value) {
+        @SuppressLint("CommitPrefEdits") SharedPreferences.Editor editor =
+                ctx.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE).edit();
+        editor.putString(key, value);
+        editor.apply();
+    }
+
+    private static String getSharedPrefsString(Context ctx, String key, String defaultValue) {
+        SharedPreferences sp = ctx.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE);
+        return sp.getString(key, defaultValue);
     }
 
 }
