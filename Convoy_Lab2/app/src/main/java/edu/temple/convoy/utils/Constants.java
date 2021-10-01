@@ -2,7 +2,7 @@ package edu.temple.convoy.utils;
 
 public class Constants {
 
-    public static final String LOG_TAG = "ConvoyV1";
+    public static final String LOG_TAG = "ConvoyV2";
 
     public static final String BASE_API_URL = "https://kamorris.com/lab/convoy/";
 
@@ -32,12 +32,14 @@ public class Constants {
     public static final String API_STATUS_ERROR = "ERROR";
 
     public static final String SHARED_PREFS_NAME = "CIS4515_ConvoyApp";
+    public static final String SHARED_PREFS_DEFAULT_STRING = "None";
+    public static final boolean SHARED_PREFS_DEFAULT_BOOL = false;
+
     public static final String SHARED_PREFS_USERNAME = "username";
     public static final String SHARED_PREFS_SESSION_KEY = "session_key";
-    public static final String SHARED_PREFS_STARTED_CONVOY_ID = "started_convoy_id";
+    public static final String SHARED_PREFS_ACTIVE_CONVOY_ID = "started_convoy_id";
     public static final String SHARED_PREFS_JOINED_CONVOY_ID = "joined_convoy_id";
     public static final String SHARED_PREFS_FCM_TOKEN = "fcm_token";
-    public static final String SHARED_PREFS_DEFAULT_STRING = "None";
 
     public static final String BROADCAST_LOCATION_UPDATE = "edu.temple.convoy.broadcast.location_update";
     public static final String BROADCAST_KEY_LAT = "latitude";

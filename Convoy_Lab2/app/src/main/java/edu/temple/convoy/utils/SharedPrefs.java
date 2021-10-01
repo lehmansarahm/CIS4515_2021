@@ -9,8 +9,8 @@ public class SharedPrefs {
     public static void clearAllUserSettings(Context ctx) {
         clearLoggedInUser(ctx);
         clearSessionKey(ctx);
-        clearStartedConvoyID(ctx);
-        clearJoinedConvoyID(ctx);
+        clearActiveConvoyID(ctx);
+        clearDidStartActiveConvoy(ctx);
         clearFcmToken(ctx);
     }
 
@@ -60,42 +60,38 @@ public class SharedPrefs {
     //      ID FOR CONVOY STARTED BY CURRENTLY LOGGED IN USER
     // ================================================================================
 
-    public static void setStartedConvoyID(Context ctx, String convoyID) {
-        setSharedPrefsString(ctx, Constants.SHARED_PREFS_STARTED_CONVOY_ID, convoyID);
+    public static void setActiveConvoyID(Context ctx, String convoyID) {
+        setSharedPrefsString(ctx, Constants.SHARED_PREFS_ACTIVE_CONVOY_ID, convoyID);
     }
 
-    public static String getStartedConvoyID(Context ctx) {
-        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_STARTED_CONVOY_ID,
+    public static String getActiveConvoyID(Context ctx) {
+        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_ACTIVE_CONVOY_ID,
                 Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
-    public static boolean isStartedConvoyIdSet(Context ctx) {
-        return (!getStartedConvoyID(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
+    public static boolean isActiveConvoyIdSet(Context ctx) {
+        return (!getActiveConvoyID(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
     }
 
-    public static void clearStartedConvoyID(Context ctx) {
-        setStartedConvoyID(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
+    public static void clearActiveConvoyID(Context ctx) {
+        setActiveConvoyID(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
     // ================================================================================
     //      ID FOR CONVOY STARTED BY CURRENTLY LOGGED IN USER
     // ================================================================================
 
-    public static void setJoinedConvoyID(Context ctx, String convoyID) {
-        setSharedPrefsString(ctx, Constants.SHARED_PREFS_JOINED_CONVOY_ID, convoyID);
+    public static void setDidStartActiveConvoy(Context ctx, boolean didStart) {
+        setSharedPrefsBool(ctx, Constants.SHARED_PREFS_JOINED_CONVOY_ID, didStart);
     }
 
-    public static String getJoinedConvoyID(Context ctx) {
-        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_JOINED_CONVOY_ID,
-                Constants.SHARED_PREFS_DEFAULT_STRING);
+    public static boolean getDidStartActiveConvoy(Context ctx) {
+        return getSharedPrefsBool(ctx, Constants.SHARED_PREFS_JOINED_CONVOY_ID,
+                Constants.SHARED_PREFS_DEFAULT_BOOL);
     }
 
-    public static boolean isJoinedConvoyIdSet(Context ctx) {
-        return (!getJoinedConvoyID(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
-    }
-
-    public static void clearJoinedConvoyID(Context ctx) {
-        setStartedConvoyID(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
+    public static void clearDidStartActiveConvoy(Context ctx) {
+        setDidStartActiveConvoy(ctx, Constants.SHARED_PREFS_DEFAULT_BOOL);
     }
 
     // ================================================================================
@@ -129,6 +125,18 @@ public class SharedPrefs {
     private static String getSharedPrefsString(Context ctx, String key, String defaultValue) {
         SharedPreferences sp = ctx.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE);
         return sp.getString(key, defaultValue);
+    }
+
+    private static void setSharedPrefsBool(Context ctx, String key, boolean value) {
+        @SuppressLint("CommitPrefEdits") SharedPreferences.Editor editor =
+                ctx.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE).edit();
+        editor.putBoolean(key, value);
+        editor.apply();
+    }
+
+    private static boolean getSharedPrefsBool(Context ctx, String key, boolean defaultValue) {
+        SharedPreferences sp = ctx.getSharedPreferences(Constants.SHARED_PREFS_NAME, Context.MODE_PRIVATE);
+        return sp.getBoolean(key, defaultValue);
     }
 
 }
