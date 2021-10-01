@@ -82,11 +82,11 @@ public class SharedPrefs {
     // ================================================================================
 
     public static void setDidStartActiveConvoy(Context ctx, boolean didStart) {
-        setSharedPrefsBool(ctx, Constants.SHARED_PREFS_JOINED_CONVOY_ID, didStart);
+        setSharedPrefsBool(ctx, Constants.SHARED_PREFS_DID_START_ACTIVE_CONVOY, didStart);
     }
 
     public static boolean getDidStartActiveConvoy(Context ctx) {
-        return getSharedPrefsBool(ctx, Constants.SHARED_PREFS_JOINED_CONVOY_ID,
+        return getSharedPrefsBool(ctx, Constants.SHARED_PREFS_DID_START_ACTIVE_CONVOY,
                 Constants.SHARED_PREFS_DEFAULT_BOOL);
     }
 

@@ -37,8 +37,8 @@ public class Constants {
 
     public static final String SHARED_PREFS_USERNAME = "username";
     public static final String SHARED_PREFS_SESSION_KEY = "session_key";
-    public static final String SHARED_PREFS_ACTIVE_CONVOY_ID = "started_convoy_id";
-    public static final String SHARED_PREFS_JOINED_CONVOY_ID = "joined_convoy_id";
+    public static final String SHARED_PREFS_ACTIVE_CONVOY_ID = "active_convoy_id";
+    public static final String SHARED_PREFS_DID_START_ACTIVE_CONVOY = "did_start_active_convoy";
     public static final String SHARED_PREFS_FCM_TOKEN = "fcm_token";
 
     public static final String BROADCAST_LOCATION_UPDATE = "edu.temple.convoy.broadcast.location_update";
