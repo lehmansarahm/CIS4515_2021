@@ -18,7 +18,7 @@ import edu.temple.convoy.utils.SharedPrefs;
 public class FcmService extends FirebaseMessagingService {
 
     @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
+    public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         Log.i(Constants.LOG_TAG, "Received new FCM message: "
                 + remoteMessage.getData().get("payload"));
         // TODO - parse out list of user locations
@@ -46,7 +46,16 @@ public class FcmService extends FirebaseMessagingService {
     }
 
     public static void unsubscribeFromTopic(Context context, String topicLabel) {
-        // TODO - fill this out
+        Log.d(Constants.LOG_TAG, "Attempting to subscribe to topic: " + topicLabel);
+        FirebaseMessaging.getInstance().unsubscribeFromTopic(topicLabel)
+                .addOnCompleteListener(task -> {
+                    String message = task.isSuccessful()
+                            ? "Successfully UN-subscribed from FCM topic for convoy: "
+                            : "Failed to unsubscribe from FCM topic for convoy: ";
+                    message += topicLabel;
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+                    Log.d(Constants.LOG_TAG, message);
+                });
     }
 
 }

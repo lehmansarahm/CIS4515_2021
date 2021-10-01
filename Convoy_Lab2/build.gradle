@@ -13,12 +13,6 @@ buildscript {
     }
 }
 
-allprojects {
-    repositories {
-        // google()     // Build was configured to prefer settings repositories over project repositories
-    }
-}
-
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
