@@ -2,7 +2,7 @@ package edu.temple.convoy.utils;
 
 public class Constants {
 
-    public static final String LOG_TAG = "ConvoyV2.5";
+    public static final String LOG_TAG = "ConvoyV3";
 
     public static final String BASE_API_URL = "https://kamorris.com/lab/convoy/";
 
