@@ -64,7 +64,6 @@ public class LoginFragment extends Fragment {
                     Context ctx = LoginFragment.this.getContext();
                     SharedPrefs.setLoggedInUser(ctx, username);
                     SharedPrefs.setSessionKey(ctx, sessionKey);
-                    FcmService.verifyCurrentToken(ctx);
 
                     Log.i(Constants.LOG_TAG, "Login attempt successful! Load the map view.");
                     Intent intent = new Intent(ctx, MapsActivity.class);

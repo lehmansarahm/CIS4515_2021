@@ -12,7 +12,24 @@ public class SharedPrefs {
         clearSessionKey(ctx);
         clearActiveConvoyID(ctx);
         clearDidStartActiveConvoy(ctx);
-        clearFcmToken(ctx);
+    }
+
+    // ================================================================================
+    //      FIREBASE MESSAGING TOKEN FOR THIS DEVICE
+    //      ... same token used, regardless of who is logged in
+    // ================================================================================
+
+    public static void setFcmToken(Context ctx, String sessionKey) {
+        setSharedPrefsString(ctx, Constants.SHARED_PREFS_FCM_TOKEN, sessionKey);
+    }
+
+    public static String getFcmToken(Context ctx) {
+        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_FCM_TOKEN,
+                Constants.SHARED_PREFS_DEFAULT_STRING);
+    }
+
+    public static boolean isFcmTokenSet(Context ctx) {
+        return (!getFcmToken(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
     }
 
     // ================================================================================
@@ -93,28 +110,6 @@ public class SharedPrefs {
 
     public static void clearDidStartActiveConvoy(Context ctx) {
         setDidStartActiveConvoy(ctx, Constants.SHARED_PREFS_DEFAULT_BOOL);
-    }
-
-    // ================================================================================
-    //      FIREBASE MESSAGING TOKEN FOR CURRENTLY LOGGED IN USER
-    // ================================================================================
-
-    public static void setFcmToken(Context ctx, String sessionKey) {
-        setSharedPrefsString(ctx, Constants.SHARED_PREFS_FCM_TOKEN, sessionKey);
-    }
-
-    public static String getFcmToken(Context ctx) {
-        return getSharedPrefsString(ctx, Constants.SHARED_PREFS_FCM_TOKEN,
-                Constants.SHARED_PREFS_DEFAULT_STRING);
-    }
-
-    public static boolean isFcmTokenSet(Context ctx) {
-        return (!getFcmToken(ctx).equals(Constants.SHARED_PREFS_DEFAULT_STRING));
-    }
-
-    protected static void clearFcmToken(Context ctx) {
-        Log.i(Constants.LOG_TAG, "Clearing previous FCM token.");
-        setFcmToken(ctx, Constants.SHARED_PREFS_DEFAULT_STRING);
     }
 
     // ================================================================================

@@ -99,7 +99,6 @@ public class LoginActivity extends AppCompatActivity {
 
     private void redirectIfLoggedIn() {
         if (SharedPrefs.isLoggedInUserSet(this) && SharedPrefs.isSessionKeySet(this)) {
-            FcmService.verifyCurrentToken(this);
             Intent mapIntent = new Intent(this, MapsActivity.class);
             startActivity(mapIntent);
         }

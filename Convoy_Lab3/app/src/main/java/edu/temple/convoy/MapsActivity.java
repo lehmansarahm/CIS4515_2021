@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -20,8 +21,12 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
+
+import java.util.List;
 
 import edu.temple.convoy.api.AccountAPI;
+import edu.temple.convoy.api.BaseAPI;
 import edu.temple.convoy.api.ConvoyAPI;
 import edu.temple.convoy.databinding.ActivityMapsBinding;
 import edu.temple.convoy.fragments.JoinConvoyDialogFragment;
@@ -57,6 +62,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // inside nested event handlers, etc.
         ctx = MapsActivity.this;
 
+        // verify the current FCM token and register it with the server if necessary
+        verifyFcmToken();
+
         // register our broadcast receiver for location updates
         registerLocationReceiver();
 
@@ -83,6 +91,55 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(locationReceiver);
+        super.onDestroy();
+    }
+
+    // ================================================================================
+    //      VERIFYING AND REGISTERING THE FCM TOKEN WITH THE SERVER
+    // ================================================================================
+
+    private void verifyFcmToken() {
+        if (SharedPrefs.isFcmTokenSet(ctx)) {
+            String storedToken = SharedPrefs.getFcmToken(ctx);
+            Log.i(Constants.LOG_TAG, "Current FCM token (from SharedPrefs): " + storedToken);
+            registerToken(storedToken);
+        } else {
+            Log.i(Constants.LOG_TAG, "FCM token not previously set ... "
+                    + "Getting current token and registering it with the server.");
+            FirebaseMessaging.getInstance().getToken()
+                    .addOnSuccessListener(token -> {
+                        Log.i(Constants.LOG_TAG, "Current FCM token (from Firebase): " + token);
+                        registerToken(token);
+                    }).addOnFailureListener(e -> {
+                        Log.e(Constants.LOG_TAG, "FCM token retrieval failed with error: " + e.getMessage());
+                        e.printStackTrace();
+                    });
+        }
+    }
+
+    private void registerToken(String token) {
+        BaseAPI.ResultListener listener = new BaseAPI.ResultListener() {
+            @Override
+            public void onSuccess(String sessionKey) {
+                Log.i(Constants.LOG_TAG, "Attempt to register new FCM token with server "
+                        + "was SUCCESSFUL.");
+            }
+
+            @Override
+            public void onFailure(String message) {
+                Log.i(Constants.LOG_TAG, "Attempt to register new FCM token with server "
+                        + "FAILED with error message: " + message);
+            }
+        };
+
+        AccountAPI accountAPI = new AccountAPI(ctx);
+        accountAPI.update(SharedPrefs.getLoggedInUser(ctx),
+                SharedPrefs.getSessionKey(ctx), token, listener);
     }
 
     // ================================================================================
@@ -179,63 +236,52 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equals(Constants.BROADCAST_LOCATION_UPDATE)) {
-                    // parse out lat-lon and update the map
-                    double lat = intent.getDoubleExtra(Constants.BROADCAST_KEY_LAT, 0.0d);
-                    double lon = intent.getDoubleExtra(Constants.BROADCAST_KEY_LON, 0.0d);
+                    // there are two possible entries we might receive ... locations for the
+                    // CURRENT USER, or locations for OTHER TRAVELERS in the convoy ...
+                    // Check to see which one we got.
+                    Log.i(Constants.LOG_TAG, "Received location update broadcast... "
+                            + "Parsing out location details.");
 
-                    // update the map
-                    mMap.clear();
-                    LatLng newPosition = new LatLng(lat, lon);
-                    mMap.addMarker(new MarkerOptions().position(newPosition).title(username));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, DEFAULT_ZOOM));
+                    if (intent.hasExtra(Constants.BROADCAST_KEY_CURR_USER_LOC)) {
+                        Traveler currentUser = (Traveler) intent
+                                .getParcelableExtra(Constants.BROADCAST_KEY_CURR_USER_LOC);
+                        Log.i(Constants.LOG_TAG, "Received location update for "
+                                + "current user: " + currentUser);
 
-                    // send an "update location" API request to server
-                    sendLocationUpdate(lat, lon);
+                        if (currentUser != null) {
+                            mMap.clear();
+                            plotConvoyTraveler(currentUser);
+                        }
+                    }
+
+                    if (intent.hasExtra(Constants.BROADCAST_KEY_CONVOY_LOCS)) {
+                        List<Traveler> travelers = (List<Traveler>) intent
+                                .getSerializableExtra(Constants.BROADCAST_KEY_CONVOY_LOCS);
+                        Log.i(Constants.LOG_TAG, "Received location updates for fellow "
+                                + "convoy travelers: " + travelers);
+
+                        // TODO - debug why travelers array is coming back as NULL
+                        if (travelers != null) {
+                            Log.i(Constants.LOG_TAG, "Received location updates for "
+                                    + travelers.size() + " travelers");
+                        }
+                    }
                 }
             }
         };
+
         registerReceiver(locationReceiver, filter);
     }
 
     /**
-     * Event handler to respond to broadcast receiver by forwarding new user location
-     * to the remote API
+     * Update the map with a new marker for the indicated convoy traveler
      *
-     * @param lat
-     * @param lon
+     * @param traveler
      */
-    private void sendLocationUpdate(double lat, double lon) {
-        // check to make sure we have an assigned convoy before we continue with loc updates
-        if (!SharedPrefs.isActiveConvoyIdSet(ctx)) {
-            Log.e(Constants.LOG_TAG, "Can't send location updates without an associated convoy!");
-            return;
-        }
-
-        // result listener to respond to operation success / failure
-        ConvoyAPI.ResultListener listener = new ConvoyAPI.ResultListener() {
-            @Override
-            public void onSuccess(String convoyID) {
-                // inform the user that the operation was successful
-                Toast.makeText(ctx, "You have updated your location with convoy: "
-                        + convoyID, Toast.LENGTH_LONG).show();
-                Log.d(Constants.LOG_TAG, "You have updated your location with convoy: "
-                        + convoyID);
-            }
-
-            @Override
-            public void onFailure(String message) {
-                // inform the user that the operation has failed
-                Log.e(Constants.LOG_TAG, "Attempt to update location has failed with message: "
-                        + message);
-                Toast.makeText(ctx, "Attempt to update location as failed.  "
-                        + "Check LogCat for message.", Toast.LENGTH_LONG).show();
-            }
-        };
-
-        // submit an "update location" API request
-        ConvoyAPI convoyAPI = new ConvoyAPI(ctx);
-        convoyAPI.updateLocation(username, sessionKey, SharedPrefs.getActiveConvoyID(ctx),
-                String.valueOf(lat), String.valueOf(lon), listener);
+    private void plotConvoyTraveler(Traveler traveler) {
+        LatLng newPosition = traveler.getLocation();
+        mMap.addMarker(new MarkerOptions().position(newPosition).title(traveler.getUsername()));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, DEFAULT_ZOOM));
     }
 
     // ================================================================================

@@ -2,7 +2,7 @@ package edu.temple.convoy.utils;
 
 public class Constants {
 
-    public static final String LOG_TAG = "ConvoyV2";
+    public static final String LOG_TAG = "ConvoyV2.5";
 
     public static final String BASE_API_URL = "https://kamorris.com/lab/convoy/";
 
@@ -43,7 +43,7 @@ public class Constants {
     public static final String SHARED_PREFS_FCM_TOKEN = "fcm_token";
 
     public static final String BROADCAST_LOCATION_UPDATE = "edu.temple.convoy.broadcast.location_update";
-    public static final String BROADCAST_KEY_LAT = "latitude";
-    public static final String BROADCAST_KEY_LON = "longitude";
+    public static final String BROADCAST_KEY_CURR_USER_LOC = "current_user_loc";
+    public static final String BROADCAST_KEY_CONVOY_LOCS = "convoy_locations";
 
 }
