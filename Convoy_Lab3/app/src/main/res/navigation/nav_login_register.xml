@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_login_register"
+    app:startDestination="@id/frag_login">
+
+    <fragment
+        android:id="@+id/frag_login"
+        android:name="edu.temple.convoy.fragments.LoginFragment"
+        android:label="@string/first_fragment_label"
+        tools:layout="@layout/fragment_login">
+
+        <!--
+            Declaring an action to transition to the Registration fragment
+            (will be called using the NavController in the LoginFragment class)
+        -->
+        <action
+            android:id="@+id/action_goto_register"
+            app:destination="@id/frag_register" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/frag_register"
+        android:name="edu.temple.convoy.fragments.RegisterFragment"
+        android:label="@string/second_fragment_label"
+        tools:layout="@layout/fragment_register">
+
+        <!--
+            Declaring an action to return to the Login fragment
+            (will be called using the NavController in the RegisterFragment class)
+        -->
+        <action
+            android:id="@+id/action_goto_login"
+            app:destination="@id/frag_login" />
+    </fragment>
+
+</navigation>
