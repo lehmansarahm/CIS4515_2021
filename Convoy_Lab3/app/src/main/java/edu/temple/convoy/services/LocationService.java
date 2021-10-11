@@ -19,6 +19,8 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
+import java.io.Serializable;
+
 import edu.temple.convoy.Traveler;
 import edu.temple.convoy.api.ConvoyAPI;
 import edu.temple.convoy.utils.Constants;
@@ -49,7 +51,7 @@ public class LocationService extends Service {
             Intent intent = new Intent();
             intent.setAction(Constants.BROADCAST_LOCATION_UPDATE);
             intent.putExtra(Constants.BROADCAST_KEY_CURR_USER_LOC,
-                    new Traveler(SharedPrefs.getLoggedInUser(LocationService.this),
+                    (Serializable) new Traveler(SharedPrefs.getLoggedInUser(LocationService.this),
                             location.getLatitude(), location.getLongitude()));
 
             // send the broadcast

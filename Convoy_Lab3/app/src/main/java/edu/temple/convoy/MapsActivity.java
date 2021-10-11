@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -20,9 +19,12 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import edu.temple.convoy.api.AccountAPI;
@@ -30,7 +32,6 @@ import edu.temple.convoy.api.BaseAPI;
 import edu.temple.convoy.api.ConvoyAPI;
 import edu.temple.convoy.databinding.ActivityMapsBinding;
 import edu.temple.convoy.fragments.JoinConvoyDialogFragment;
-import edu.temple.convoy.services.FcmService;
 import edu.temple.convoy.services.LocationService;
 import edu.temple.convoy.utils.Constants;
 import edu.temple.convoy.utils.SharedPrefs;
@@ -43,6 +44,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
+
+    private Marker currentUserMarker;
+    private List<Marker> fellowTravelerMarkers;
 
     private Context ctx;
     private Intent locationServiceIntent;
@@ -159,6 +163,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        fellowTravelerMarkers = new ArrayList<>();
 
         // get user's last location and plot it
         FusedLocationProviderClient fusedLocationClient =
@@ -167,7 +172,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .addOnSuccessListener(this, location -> {
                     if (location != null) {
                         LatLng newPosition = new LatLng(location.getLatitude(), location.getLongitude());
-                        mMap.addMarker(new MarkerOptions().position(newPosition).title(username));
+                        currentUserMarker = mMap.addMarker(new MarkerOptions().position(newPosition).title(username));
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, DEFAULT_ZOOM));
                     }
                 });
@@ -242,30 +247,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Log.i(Constants.LOG_TAG, "Received location update broadcast... "
                             + "Parsing out location details.");
 
+                    // check for updates to the current user
                     if (intent.hasExtra(Constants.BROADCAST_KEY_CURR_USER_LOC)) {
                         Traveler currentUser = (Traveler) intent
-                                .getParcelableExtra(Constants.BROADCAST_KEY_CURR_USER_LOC);
+                                .getSerializableExtra(Constants.BROADCAST_KEY_CURR_USER_LOC);
                         Log.i(Constants.LOG_TAG, "Received location update for "
                                 + "current user: " + currentUser);
 
                         if (currentUser != null) {
-                            mMap.clear();
-                            plotConvoyTraveler(currentUser);
+                            currentUserMarker.setPosition(currentUser.getLocation());
                         }
                     }
 
+                    // check for updates to fellow convoy travelers
                     if (intent.hasExtra(Constants.BROADCAST_KEY_CONVOY_LOCS)) {
                         List<Traveler> travelers = (List<Traveler>) intent
                                 .getSerializableExtra(Constants.BROADCAST_KEY_CONVOY_LOCS);
                         Log.i(Constants.LOG_TAG, "Received location updates for fellow "
                                 + "convoy travelers: " + travelers);
-
-                        // TODO - debug why travelers array is coming back as NULL
-                        if (travelers != null) {
-                            Log.i(Constants.LOG_TAG, "Received location updates for "
-                                    + travelers.size() + " travelers");
-                        }
+                        updateFellowTravelerMarkers(travelers);
                     }
+
+                    // reset the map perspective (center/zoom) based on new marker locations
+                    resetMapPerspective();
                 }
             }
         };
@@ -274,14 +278,86 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * Update the map with a new marker for the indicated convoy traveler
+     * Update the local list of markers representing our fellow convoy travelers
      *
-     * @param traveler
+     * @param fellowTravelers
      */
-    private void plotConvoyTraveler(Traveler traveler) {
-        LatLng newPosition = traveler.getLocation();
-        mMap.addMarker(new MarkerOptions().position(newPosition).title(traveler.getUsername()));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newPosition, DEFAULT_ZOOM));
+    private void updateFellowTravelerMarkers(List<Traveler> fellowTravelers) {
+        if (fellowTravelers == null || fellowTravelers.size() == 0) {
+            // if we have received an empty list of fellow travelers, WIPE EVERYTHING
+            for (Marker marker : fellowTravelerMarkers) {
+                marker.remove();
+                fellowTravelerMarkers.remove(marker);
+            }
+            return;
+        }
+
+        // Phase 1:  Check for new / existing markers first
+        // (I KNOW THIS IS INCREDIBLY INEFFICIENT ... DON'T @ ME)
+        for (Traveler traveler : fellowTravelers) {
+            boolean markerAlreadyExists = false;
+            for (Marker marker : fellowTravelerMarkers) {
+                if (marker.getTitle().equals(traveler.getUsername())) {
+                    // a marker already exists for this traveler ... UPDATE IT
+                    markerAlreadyExists = true;
+                    marker.setPosition(traveler.getLocation());
+                    break;
+                }
+            }
+
+            if (!markerAlreadyExists) {
+                // we got through the list and did not find a match for this traveler...
+                // create a new marker!
+                Marker newMarker = mMap.addMarker(new MarkerOptions()
+                        .position(traveler.getLocation())
+                        .title(traveler.getUsername()));
+                fellowTravelerMarkers.add(newMarker);
+            }
+        }
+
+        // Phase 2:  Check to see if there are any markers with no corresponding travelers
+        // (AGAIN... I KNOW THERE IS PROBABLY A MORE ELEGANT WAY TO DO THIS ... DON'T @ ME)
+        for (Marker marker : fellowTravelerMarkers) {
+            boolean existsInTravelerList = false;
+
+            for (Traveler traveler : fellowTravelers) {
+                if (marker.getTitle().equals(traveler.getUsername())) {
+                    existsInTravelerList = true;
+                    break;
+                }
+            }
+
+            // if we got through the whole list and this flag is still false, it means
+            // that the marker exists with no corresponding traveler... REMOVE IT
+            if (!existsInTravelerList) {
+                marker.remove();
+                fellowTravelerMarkers.remove(marker);
+            }
+        }
+    }
+
+    /**
+     * Reset the map zoom and center based on the current user / fellow traveler markers
+     */
+    private void resetMapPerspective() {
+        if (fellowTravelerMarkers == null || fellowTravelerMarkers.size() == 0) {
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentUserMarker.getPosition(), DEFAULT_ZOOM));
+            return;
+        }
+
+        List<Marker> allMarkers = new ArrayList<>(fellowTravelerMarkers);
+        allMarkers.add(currentUserMarker);
+
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        LatLng position;
+
+        for(int i = 0; i < allMarkers.size(); i++){
+            position = allMarkers.get(i).getPosition();
+            builder.include(new LatLng(position.latitude, position.longitude));
+        }
+
+        LatLngBounds bounds = builder.build();
+        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
     }
 
     // ================================================================================
